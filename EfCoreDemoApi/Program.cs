@@ -1,4 +1,5 @@
 using EfCoreDemoApi.Data;
+using EfCoreDemoApi.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 
@@ -10,6 +11,10 @@ var builder = WebApplication.CreateBuilder(args);
 //sql kullanacağımız için UseSqlServer metodu ile bağlantı dizesini veriyoruz
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Repositories - Dependency Injection
+// Scoped: Her HTTP isteği için yeni bir instance oluşturur
+builder.Services.AddScoped<IProductRepository, ProductRepository>();
 
 // Controllers
 //api controllerlarını kullanabilmek için ekliyoruz

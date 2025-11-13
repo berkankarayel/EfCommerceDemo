@@ -21,6 +21,8 @@ public class ApplicationDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
         
-        // Fluent API konfigürasyonları buraya gelecek
+        // Fluent API: Configuration sınıflarını otomatik olarak uygula
+        // Assembly'deki tüm IEntityTypeConfiguration implementasyonlarını bul ve uygula
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
     }
 }

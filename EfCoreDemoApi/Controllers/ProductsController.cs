@@ -1,8 +1,7 @@
-using EfCoreDemoApi.Data;
 using EfCoreDemoApi.DTOs;
 using EfCoreDemoApi.Entities;
+using EfCoreDemoApi.Repositories;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace EfCoreDemoApi.Controllers;
 
@@ -10,59 +9,66 @@ namespace EfCoreDemoApi.Controllers;
 [ApiController]
 public class ProductsController : ControllerBase
 {
-    private readonly ApplicationDbContext _context;
+    private readonly IProductRepository _productRepository;
 
-    public ProductsController(ApplicationDbContext context)
+    public ProductsController(IProductRepository productRepository)
     {
-        _context = context;
+        _productRepository = productRepository;
     }
 
-    // GET: api/Products
+    // GET: api/Products?categoryId=1&minPrice=1000&maxPrice=5000&searchName=iphone&sortBy=price&isDescending=true
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<ProductDto>>> GetProducts()
+    public async Task<ActionResult<IEnumerable<ProductDto>>> GetProducts(
+        [FromQuery] int? categoryId,
+        [FromQuery] decimal? minPrice,
+        [FromQuery] decimal? maxPrice,
+        [FromQuery] string? searchName,
+        [FromQuery] string? sortBy,
+        [FromQuery] bool isDescending = false)
     {
-        var products = await _context.Products
-            .Include(p => p.Category)
-            .Select(p => new ProductDto
-            {
-                Id = p.Id,
-                Name = p.Name,
-                Description = p.Description,
-                Price = p.Price,
-                Stock = p.Stock,
-                CategoryId = p.CategoryId,
-                CategoryName = p.Category.Name
-            })
-            .ToListAsync();
+        // Repository'den filtrelenmiş ürünleri getir (tüm karmaşık mantık repository'de!)
+        var products = await _productRepository.GetProductsWithFiltersAsync(
+            categoryId, minPrice, maxPrice, searchName, sortBy, isDescending);
 
-        return Ok(products);
+        // DTO'ya dönüştür
+        var productDtos = products.Select(p => new ProductDto
+        {
+            Id = p.Id,
+            Name = p.Name,
+            Description = p.Description,
+            Price = p.Price,
+            Stock = p.Stock,
+            CategoryId = p.CategoryId,
+            CategoryName = p.Category.Name
+        });
+
+        return Ok(productDtos);
     }
 
     // GET: api/Products/5
     [HttpGet("{id}")]
     public async Task<ActionResult<ProductDto>> GetProduct(int id)
     {
-        var product = await _context.Products
-            .Include(p => p.Category)
-            .Where(p => p.Id == id)
-            .Select(p => new ProductDto
-            {
-                Id = p.Id,
-                Name = p.Name,
-                Description = p.Description,
-                Price = p.Price,
-                Stock = p.Stock,
-                CategoryId = p.CategoryId,
-                CategoryName = p.Category.Name
-            })
-            .FirstOrDefaultAsync();
+        // Repository'den kategoriyle birlikte getir
+        var product = await _productRepository.GetProductWithCategoryAsync(id);
 
         if (product == null)
         {
             return NotFound();
         }
 
-        return Ok(product);
+        var productDto = new ProductDto
+        {
+            Id = product.Id,
+            Name = product.Name,
+            Description = product.Description,
+            Price = product.Price,
+            Stock = product.Stock,
+            CategoryId = product.CategoryId,
+            CategoryName = product.Category.Name
+        };
+
+        return Ok(productDto);
     }
 
     // POST: api/Products
@@ -78,23 +84,23 @@ public class ProductsController : ControllerBase
             CategoryId = createDto.CategoryId
         };
 
-        _context.Products.Add(product);
-        await _context.SaveChangesAsync();
+        // Repository ile ekle
+        await _productRepository.AddAsync(product);
+        await _productRepository.SaveChangesAsync();
 
-        var productDto = await _context.Products
-            .Include(p => p.Category)
-            .Where(p => p.Id == product.Id)
-            .Select(p => new ProductDto
-            {
-                Id = p.Id,
-                Name = p.Name,
-                Description = p.Description,
-                Price = p.Price,
-                Stock = p.Stock,
-                CategoryId = p.CategoryId,
-                CategoryName = p.Category.Name
-            })
-            .FirstAsync();
+        // Eklenen ürünü kategoriyle birlikte getir
+        var createdProduct = await _productRepository.GetProductWithCategoryAsync(product.Id);
+
+        var productDto = new ProductDto
+        {
+            Id = createdProduct!.Id,
+            Name = createdProduct.Name,
+            Description = createdProduct.Description,
+            Price = createdProduct.Price,
+            Stock = createdProduct.Stock,
+            CategoryId = createdProduct.CategoryId,
+            CategoryName = createdProduct.Category.Name
+        };
 
         return CreatedAtAction(nameof(GetProduct), new { id = product.Id }, productDto);
     }
@@ -103,7 +109,7 @@ public class ProductsController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateProduct(int id, UpdateProductDto updateDto)
     {
-        var product = await _context.Products.FindAsync(id);
+        var product = await _productRepository.GetByIdAsync(id);
 
         if (product == null)
         {
@@ -116,7 +122,8 @@ public class ProductsController : ControllerBase
         product.Stock = updateDto.Stock;
         product.CategoryId = updateDto.CategoryId;
 
-        await _context.SaveChangesAsync();
+        await _productRepository.UpdateAsync(product);
+        await _productRepository.SaveChangesAsync();
 
         return NoContent();
     }
@@ -125,15 +132,15 @@ public class ProductsController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteProduct(int id)
     {
-        var product = await _context.Products.FindAsync(id);
+        var product = await _productRepository.GetByIdAsync(id);
 
         if (product == null)
         {
             return NotFound();
         }
 
-        _context.Products.Remove(product);
-        await _context.SaveChangesAsync();
+        await _productRepository.DeleteAsync(product);
+        await _productRepository.SaveChangesAsync();
 
         return NoContent();
     }
