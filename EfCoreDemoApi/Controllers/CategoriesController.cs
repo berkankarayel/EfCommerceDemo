@@ -10,14 +10,21 @@ namespace EfCoreDemoApi.Controllers;
 [ApiController]
 public class CategoriesController : ControllerBase
 {
+    // Dependency Injection ile DbContext'i alıyoruz
+    //cONTROLLER ERİŞİMİ İÇİN
+    // CONNECTION STRİNG İLE VERİTABANINA BAĞLANMAK İÇİN
+    //MİGRATİON İLE OLUŞTURDUĞUMUZ TABLOLARA ERİŞMEK İÇİN
     private readonly ApplicationDbContext _context;
 
+    // Constructor İLE DEPENDENCY INJECTION YAPIYORUZ
+    // context parametresi ile ApplicationDbContext örneğini alıyoruz
     public CategoriesController(ApplicationDbContext context)
     {
         _context = context;
     }
 
     // GET: api/Categories
+    //Tüm kategorileri getirmek için
     [HttpGet]
     public async Task<ActionResult<IEnumerable<CategoryDto>>> GetCategories()
     {

@@ -137,3 +137,4 @@ C:\Users\berka\OneDrive\Masaüstü\EntityFramework\EfCoreDemoApi\obj\Debug\net8.
 C:\Users\berka\OneDrive\Masaüstü\EntityFramework\EfCoreDemoApi\obj\Debug\net8.0\EfCoreDemoApi.pdb
 C:\Users\berka\OneDrive\Masaüstü\EntityFramework\EfCoreDemoApi\obj\Debug\net8.0\EfCoreDemoApi.genruntimeconfig.cache
 C:\Users\berka\OneDrive\Masaüstü\EntityFramework\EfCoreDemoApi\obj\Debug\net8.0\ref\EfCoreDemoApi.dll
+C:\Users\berka\OneDrive\Masaüstü\EntityFramework\EfCoreDemoApi\obj\Debug\net8.0\EfCoreDemoApi.sourcelink.json
